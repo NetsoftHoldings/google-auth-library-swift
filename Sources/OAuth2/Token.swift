@@ -29,7 +29,7 @@ public struct Token : Codable {
     case CreationTime = "creation_time"
   }
   
-  func save(_ filename: String) throws {
+  public func save(_ filename: String) throws {
     let encoder = JSONEncoder()
     let data = try encoder.encode(self)
     try data.write(to: URL(fileURLWithPath: filename))

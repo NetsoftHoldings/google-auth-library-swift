@@ -17,25 +17,23 @@ import Foundation
 #if canImport(FoundationNetworking)
   import FoundationNetworking
 #endif
-import NIOHTTP1
-import TinyHTTPServer
 
 // For the browser and native flows, an oauth2 authorization code must be
 // exchanged for a live token by the user's agent/client.
 
-protocol CodeExchangeInfo {
+public protocol CodeExchangeInfo {
   var accessTokenURL: String { get }
   var clientID: String { get }
   var clientSecret: String { get }
   var redirectURI: String { get }
 }
 
-class Code {
+public class Code {
   var code: String?
   var state: String?
   var error: String?
   
-  init(urlComponents: URLComponents) {
+  public init(urlComponents: URLComponents) {
     for queryItem in urlComponents.queryItems! {
       if let value = queryItem.value {
         switch queryItem.name {
@@ -52,7 +50,7 @@ class Code {
     }
   }
 
-  func exchange(info: CodeExchangeInfo) throws -> Token {
+  public func exchange(info: CodeExchangeInfo) throws -> Token {
     let sem = DispatchSemaphore(value: 0)
     let parameters = [
       "client_id": info.clientID, // some providers require the client id and secret in the method call

@@ -75,7 +75,7 @@ public class Connection {
     
     try provider.withToken {token, err in
       guard let accessToken = token?.AccessToken else {
-        return callback(nil, nil, AuthError.unknownError)
+        return callback(nil, nil, err ?? AuthError.unknownError)
       }
       Connection.performRequest(
         method: method,

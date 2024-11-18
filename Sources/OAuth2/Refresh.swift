@@ -17,22 +17,22 @@ import Foundation
   import FoundationNetworking
 #endif
 
-protocol RefreshExchangeInfo {
+public protocol RefreshExchangeInfo {
   var accessTokenURL: String { get }
   var clientID: String { get }
   var clientSecret: String { get }
 }
 
-class Refresh {
+public class Refresh {
     
   let token: String
     
-  convenience init(token data: Data) throws {
+  public convenience init(token data: Data) throws {
     let token = try JSONDecoder().decode(Token.self, from: data)
     try self.init(token: token)
   }
   
-  init(token: Token) throws {
+  public init(token: Token) throws {
     if let rt = token.RefreshToken {
       self.token = rt
     } else {
@@ -40,7 +40,7 @@ class Refresh {
     }
   }
 
-  func exchange(info: RefreshExchangeInfo) throws -> Token {
+  public func exchange(info: RefreshExchangeInfo) throws -> Token {
     let sem = DispatchSemaphore(value: 0)
     let parameters = [
       "client_id": info.clientID,

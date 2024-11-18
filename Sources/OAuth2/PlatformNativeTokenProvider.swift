@@ -18,20 +18,22 @@ import Foundation
 import AuthenticationServices
 
 public struct NativeCredentials: Codable, CodeExchangeInfo, RefreshExchangeInfo {
-  let clientID: String
   let authorizeURL: String
-  let accessTokenURL: String
   let callbackScheme: String
+
   enum CodingKeys: String, CodingKey {
     case clientID = "client_id"
     case authorizeURL = "authorize_url"
     case accessTokenURL = "access_token_url"
     case callbackScheme = "callback_scheme"
   }
-  var redirectURI: String {
+
+  public let clientID: String
+  public let accessTokenURL: String
+  public var redirectURI: String {
     callbackScheme + ":/oauth2redirect"
   }
-  var clientSecret: String {
+  public var clientSecret: String {
     ""
   }
 }

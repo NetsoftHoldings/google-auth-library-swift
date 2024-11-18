@@ -19,6 +19,7 @@ import Foundation
 import FirebaseFunctions
 import FirebaseCore
 import FirebaseAuth
+import OAuth2
 
 struct TokenServiceConstants {
     static let token = "Token"
@@ -31,26 +32,17 @@ struct TokenServiceConstants {
     static let noTokenError = "No token is available"
 }
 
+@available(iOS 13.0, *)
+public class FCMTokenProvider: TokenProvider {
+    private let deviceID: String
 
-public class FCMTokenProvider {
-    
-    static private func retrieveAccessToken(deviceID: String, completionHandler: @escaping (Error?) -> Void) {
-        Functions.functions().httpsCallable(TokenServiceConstants.getTokenAPI).call(["deviceID": deviceID], completion: { (result, error) in
-            if error != nil {
-                completionHandler(error)
-                return
-            }
-            guard let _: HTTPSCallableResult = result else {
-                completionHandler("Result found nil" as? Error)
-                return
-            }
-           completionHandler(nil)
-        })
+    public init(deviceID: String) {
+        self.deviceID = deviceID
     }
-    
+
     //This function compares token expiry date with current date
     //Returns bool value True if the token is expired else false
-    static private func isExpired() -> Bool {
+    private func isExpired() -> Bool {
         guard let token = UserDefaults.standard.value(forKey: TokenServiceConstants.token) as? [String: String],
             let expDate = token[TokenServiceConstants.expireTime] else{
                 return true
@@ -66,48 +58,57 @@ public class FCMTokenProvider {
     //Return token from user defaults if token is there and not expired.
     //Request for new token if token is expired or not there in user defaults.
     //Return the newly generated token.
-    static public func getToken(deviceID: String, _ callback: @escaping (_ shouldWait:Bool, _ token: String?, _ error: Error?) -> Void) {
+    public func getToken(_ callback: @escaping (_ token: String?, _ error: Error?) -> Void) {
         if isExpired() {
             NotificationCenter.default.post(name: NSNotification.Name(TokenServiceConstants.retreivingToken), object: nil)
             //NotificationCenter.default.addObserver(self, selector: #selector(tokenReceived(tokenData:)), name: NSNotification.Name(TokenServiceConstants.tokenReceived), object: nil)
             //this sample uses Firebase Auth signInAnonymously and you can insert any auth signin that they offer.
             //FirebaseApp.configure()
             Auth.auth().signInAnonymously() { (authResult, error) in
-                if error != nil {
-                    //Sign in failed
-                    callback(false, nil, error)
-                    return
+                if let token = authResult?.credential?.accessToken {
+                    callback(token, error)
                 }
-                retrieveAccessToken(deviceID: deviceID, completionHandler: {(error) in
-                    if let error = error {
-                        callback(false, nil, error)
-                    } else {
-                        callback(true, nil, nil)
+                else if let authResult {
+                    authResult.user.getIDToken { token, error in
+                        callback(token, error)
                     }
-                })
+                }
+                else {
+                    callback(nil, error)
+                }
             }
         } else {
             if let tokenData = UserDefaults.standard.value(forKey: TokenServiceConstants.token) as? [String: Any],
                 let accessToken = tokenData[TokenServiceConstants.accessToken] as? String {
                 let tokenModel = "\(TokenServiceConstants.tokenType)\(accessToken)"
-                callback(false, tokenModel, nil)
+                callback(tokenModel, nil)
             } else {
                 UserDefaults.standard.set(nil, forKey: TokenServiceConstants.token)
-                getToken(deviceID: deviceID, callback)
+                getToken(callback)
             }
         }
     }
     
-    static public func tokenFromAppDelegate(tokenDict: [String: Any]) {
+    public func tokenFromAppDelegate(tokenDict: [String: Any]) {
         UserDefaults.standard.set(tokenDict, forKey: TokenServiceConstants.token)
     }
     
-    static public func getTokenFromUserDefaults() -> String {
+    public func getTokenFromUserDefaults() -> String {
         guard let tokenData = UserDefaults.standard.value(forKey: TokenServiceConstants.token) as? [String: String],
             let token = tokenData[TokenServiceConstants.accessToken] else{
                 return "Token is not there in user defaults"
         }
         return TokenServiceConstants.tokenType + token
+    }
+
+    public func withToken(_ callback: @escaping (Token?, (any Error)?) -> Void) throws {
+        self.getToken { token, error in
+            if let token {
+                callback(Token(accessToken: token), error)
+            } else {
+                callback(nil, error)
+            }
+        }
     }
 }
 

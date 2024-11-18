@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name = "AuthLibrary"
-  s.version = "0.5.0"
+  s.version = "0.5.4"
   s.summary = "Auth client library for Swift command-line tools, cloud services, and apps."
   s.swift_version = "5.0"
   s.ios.deployment_target = "10.0"
@@ -45,5 +45,4 @@ The CocoaPods distribution supports iOS-based authentication using Google Cloud 
   s.dependency "Firebase/Core"
   s.dependency "Firebase/Functions"
   s.dependency "Firebase/Auth"
-  s.dependency "Firebase/Firestore"
 end
